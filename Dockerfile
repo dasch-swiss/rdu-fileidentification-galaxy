@@ -31,5 +31,3 @@ COPY --from=py_env /app/.venv /app/.venv
 COPY ./fileidentification /app/fileidentification
 COPY ./identify.py /app/.
 COPY ./appconfig.toml /app/.
-
-ENTRYPOINT ["/app/.venv/bin/python3", "/app/identify.py"]
