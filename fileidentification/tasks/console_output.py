@@ -88,7 +88,7 @@ def print_processing_errors(log_tables: LogTables) -> None:
 
 def _print_logs(logs: list[LogMsg]) -> None:
     for log in logs:
-        secho(f"{log.timestamp}    {log.name}:    {log.msg.replace('\n', ' ')}")
+        secho(f"{log.name}:    {log.msg.replace('\n', ' ')}")
 
 
 def print_msg(msg: str, quiet: bool) -> None:
