@@ -23,6 +23,7 @@ expecting one of the following ext: ['doc', 'wbk']
 WARNING: you should manually rename test-data/SampleJPGImage.tif
 expecting one of the following ext: ['jfi', 'jfif', 'jif', 'jpe', 'jpeg', 'jpg']
 
+
 ----------- errors -----------
 
   1.029 MB    test-data/47fdDI7XARj-dD5pt3RUc2e.jpg
@@ -37,4 +38,4 @@ filehandler:    file is corrupt: removed
 ----------- processing errors -----------
 
   0.006 MB    test-data/nested folder/bear-320x180-10bit-frame-0.hevc
-filehandler:    failed to get fmt type for nested folder/bear-320x180-10bit-frame-0.hevc
+filehandler:    failed to get fmt type for test-data/nested folder/bear-320x180-10bit-frame-0.hevc
