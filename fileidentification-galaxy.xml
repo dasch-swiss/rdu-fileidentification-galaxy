@@ -1,11 +1,13 @@
-<tool id="fileidentification" name="File Format Identification" version="0.1.0" python_template_version="3.5">
+<tool id="fileidentification" name="File Format Identification" version="2.5.0+galaxy0">
+    <description>Check multimedia files if they are corrupt or duplicated</description>
     <requirements>
         <container type="docker">
             daschswiss/fileidentification-galaxy:latest
         </container>
     </requirements>
     <command detect_errors="exit_code"><![CDATA[
-unzip $input1 -d input_dir &&
+unzip '$input1' -d input_dir
+&&
 /app/.venv/bin/python /app/identify.py ./input_dir > results.txt
     ]]></command>
     <inputs>
@@ -26,11 +28,15 @@ or if they have the correct extension?
 This tool
 
 - gives you an overview of what file types there are
-- checks if there are any hidden duplicates
 - checks if the extension of the files match their content
+- checks if there are any duplicates
 - checks if the content of the files is intact
 
 A possible use case are digital preservation workflows,
 where you want to make sure that you only preserve high-quality files for the future.
+
+Supported file types: A wide range of image formats (pixel and vector), videos, audios, pdf, MS Office.
+
+Find more information in `the GitHub repo <https://github.com/dasch-swiss/fileidentification>`_.
     ]]></help>
 </tool>
