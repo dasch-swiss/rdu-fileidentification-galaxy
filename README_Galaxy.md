@@ -57,9 +57,6 @@ docker build -t daschswiss/fileidentification-galaxy:latest .
 - Check the `.shed.yml` with `planemo shed_lint --tools`.
 - Create the remote repository with `planemo shed_create --shed_target testtoolshed`.
 
-
-
-
 ## Synchronize this fork with the upstream
 
 Make sure the upstream is set correctly:
