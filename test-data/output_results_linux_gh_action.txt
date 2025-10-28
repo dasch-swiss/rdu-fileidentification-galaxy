@@ -26,15 +26,15 @@ expecting one of the following ext: ['jfi', 'jfif', 'jif', 'jpe', 'jpeg', 'jpg']
 ----------- errors -----------
 
   1.029 MB    test-data/47fdDI7XARj-dD5pt3RUc2e.jpg
-2025-10-23 09:25:40.468042+00:00    magick:    identify: Corrupt JPEG data: premature end of data segment `/47fdDI7XARj-dD5pt3RUc2e.jpg' @ warning/jpeg.c/JPEGWarningHandler/411. 
-2025-10-23 09:25:40.468050+00:00    filehandler:    file is corrupt: removed
+magick:    identify: Corrupt JPEG data: premature end of data segment `/47fdDI7XARj-dD5pt3RUc2e.jpg' @ warning/jpeg.c/JPEGWarningHandler/411. 
+filehandler:    file is corrupt: removed
 
   0.049 MB    test-data/corrupt.mp4
-2025-10-23 09:25:17.739769+00:00    filehandler:    fmt not detected, falling back on ext
-2025-10-23 09:25:39.894315+00:00    ffmpeg:    [ERROR] code=-1094995529 string=Invalid data found when processing input [/ERROR] 
-2025-10-23 09:25:39.894363+00:00    filehandler:    file is corrupt: removed
+filehandler:    fmt not detected, falling back on ext
+ffmpeg:    [ERROR] code=-1094995529 string=Invalid data found when processing input [/ERROR] 
+filehandler:    file is corrupt: removed
 
 ----------- processing errors -----------
 
   0.006 MB    test-data/nested folder/bear-320x180-10bit-frame-0.hevc
-2025-10-23 09:25:40.902635+00:00    filehandler:    failed to get fmt type for nested folder/bear-320x180-10bit-frame-0.hevc
+filehandler:    failed to get fmt type for nested folder/bear-320x180-10bit-frame-0.hevc
