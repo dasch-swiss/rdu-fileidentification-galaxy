@@ -1,7 +1,11 @@
 
 ----------- duplicates -----------
 
-md5: 7b087c19a971642e75e75ed66ba00555 - files: 
+md5: 6c0cf64b97d107bdfae8d54ea4cd3375 - files: 
+test-data/file-sample_13kB.pdf
+test-data/file-sample_13kB.docx
+
+md5: 82b415572a47acd77156a1f69e61c75e - files: 
 test-data/SampleJPGImage.jpg
 test-data/SampleJPGImage.tif
 
@@ -21,14 +25,10 @@ WARNING: you should manually rename test-data/file-sample_100kB.docx
 expecting one of the following ext: ['doc', 'wbk']
 
 WARNING: you should manually rename test-data/SampleJPGImage.tif
-expecting one of the following ext: ['jfi', 'jfif', 'jif', 'jpe', 'jpeg', 'jpg']
+expecting one of the following ext: ['jpeg', 'jpg']
 
 
 ----------- errors -----------
-
-  1.029 MB    test-data/47fdDI7XARj-dD5pt3RUc2e.jpg
-magick:    identify: Corrupt JPEG data: premature end of data segment `/47fdDI7XARj-dD5pt3RUc2e.jpg' @ warning/jpeg.c/JPEGWarningHandler/411. 
-filehandler:    file is corrupt: removed
 
   0.049 MB    test-data/corrupt.mp4
 filehandler:    fmt not detected, falling back on ext
