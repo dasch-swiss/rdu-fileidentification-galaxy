@@ -1,10 +1,10 @@
 
-
 ----------- duplicates -----------
 
 md5: 7b087c19a971642e75e75ed66ba00555 - files: 
 test-data/SampleJPGImage.jpg
 test-data/SampleJPGImage.tif
+
 
 
 ----------- file formats -----------
@@ -17,11 +17,11 @@ no. of files  | combined size  | fmt type   | policy     | convert    | format n
 1             | 0.678 MB       | fmt/585    |            | ffmpeg     | MPEG-2 Transport Stream
 1             | 0.266 MB       | fmt/5      |            | ffmpeg     | Audio/Video Interleaved Format
 
-WARNING: you should manually rename SampleJPGImage.tif
-expecting one of the following ext: ['jfi', 'jfif', 'jif', 'jpe', 'jpeg', 'jpg']
-
-WARNING: you should manually rename file-sample_100kB.docx
+WARNING: you should manually rename test-data/file-sample_100kB.docx
 expecting one of the following ext: ['doc', 'wbk']
+
+WARNING: you should manually rename test-data/SampleJPGImage.tif
+expecting one of the following ext: ['jfi', 'jfif', 'jif', 'jpe', 'jpeg', 'jpg']
 
 ----------- errors -----------
 
