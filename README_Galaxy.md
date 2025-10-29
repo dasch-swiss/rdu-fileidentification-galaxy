@@ -56,6 +56,7 @@ docker build -t daschswiss/fileidentification-galaxy:latest .
 - In `~/.planemo.yml` > sheds > testtoolshed, fill in your credentials for <https://testtoolshed.g2.bx.psu.edu/>
 - Check the `.shed.yml` with `planemo shed_lint --tools`.
 - Create the remote repository with `planemo shed_create --shed_target testtoolshed`.
+- DaSCH has an account on the prod toolshed <https://toolshed.g2.bx.psu.edu/>.
 
 ## Synchronize this fork with the upstream
 

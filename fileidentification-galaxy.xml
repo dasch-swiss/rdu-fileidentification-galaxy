@@ -47,7 +47,7 @@ Find more information in `the GitHub repo <https://github.com/dasch-swiss/fileid
     ]]></help>
     <citations>
         <citation type="bibtex">
-@misc{githubpbmm2,
+@misc{githubfileidentification,
   author = {Swiss National Data and Service Center for the Humanities},
   year = {2025},
   title = {Fileidentification - A CLI to Identify Multimedia File Formats and Bulk Convert Files},
