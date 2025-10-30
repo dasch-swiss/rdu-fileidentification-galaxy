@@ -16,6 +16,14 @@ jobs:
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
+      - name: Extract version from macros.xml
+        id: version
+        run: |
+          TOOL_VERSION=$(grep '<token name="@TOOL_VERSION@">' macros.xml | sed -E 's/.*<token name="@TOOL_VERSION@">([^<]+)<.*/\1/')
+          GALAXY_VERSION=$(grep '<token name="@GALAXY_VERSION@">' macros.xml | sed -E 's/.*<token name="@GALAXY_VERSION@">([^<]+)<.*/\1/')
+          VERSION_TAG="${TOOL_VERSION}-galaxy${GALAXY_VERSION}"
+          echo "version_tag=${VERSION_TAG}" >> $GITHUB_OUTPUT
+          echo "Publishing version: ${VERSION_TAG}"
       - name: Login to Dockerhub
         run: echo ${{ secrets.DOCKER_HUB_TOKEN }} | docker login -u ${{ secrets.DOCKER_USER }} --password-stdin
       - name: Build and push multi-arch image
@@ -23,5 +31,6 @@ jobs:
           docker buildx build \
             --platform linux/amd64,linux/arm64 \
             -t daschswiss/fileidentification-galaxy:latest \
+            -t daschswiss/fileidentification-galaxy:${{ steps.version.outputs.version_tag }} \
             --push \
             .

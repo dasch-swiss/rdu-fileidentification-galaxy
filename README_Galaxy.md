@@ -1,5 +1,6 @@
 # Galaxy Integration
 
+
 ## Develop the Tool Wrapper XML using Planemo
 
 The following commands assume that Planemo is installed.
@@ -39,7 +40,7 @@ Keep in mind:
   You can run the e2e test on MacOS anyways, to get a rough idea about what's going on.
 
 
-### Rebuilding the Docker Image
+### Rebuilding the Docker Image (just for local testing)
 
 Every push to the main branch triggers a rebuild of the Docker image,
 and uploads it to [Docker Hub](https://hub.docker.com/r/daschswiss/fileidentification-galaxy).
@@ -48,13 +49,15 @@ If you modify the Python code or the Dockerfile, and open a PR, the automated te
 But if you want your local planemo to be aware of your changes, make sure to rebuild the image first:
 
 ```bash
-docker build -t daschswiss/fileidentification-galaxy:latest .
+TOOL_VERSION=xyz    # copy from macros.xml
+GALAXY_VERSION=xyz  # copy from macros.xml
+docker build -t daschswiss/fileidentification-galaxy:${TOOL_VERSION}-galaxy${GALAXY_VERSION} .
 ```
 
 
 ## Tool Shed
 
-Publishing to <https://toolshed.g2.bx.psu.edu/> is automatically done by tools-iuc,
+Publishing to Galaxy's app store <https://toolshed.g2.bx.psu.edu/> is automatically done by tools-iuc,
 and configured by `.shed.yml`.
 Steps to test if `.shed.yml` is correct:
 
@@ -68,29 +71,49 @@ Steps to test if `.shed.yml` is correct:
   which is probably not used, because of `owner: iuc`.
 
 
-## Synchronize this fork with the upstream
+## How to update the Galaxy Tool
+
+Follow these steps to bring the latest changes from <https://github.com/dasch-swiss/fileidentification>
+into Galaxy's tool shed (app store) <https://toolshed.g2.bx.psu.edu/>.
 
 Make sure the upstream is set correctly:
 
 ```bash
-git remote -v
+% git remote -v
 origin	  git@github.com:dasch-swiss/fileidentification-galaxy (fetch)
 origin	  git@github.com:dasch-swiss/fileidentification-galaxy (push)
 upstream	git@github.com:dasch-swiss/fileidentification.git (fetch)
 upstream	git@github.com:dasch-swiss/fileidentification.git (push)
 ```
 
-To synchronize with upstream, create a PR with the changes from upstream:
+Pull in the changes from upstream:
 
 ```bash
 git fetch upstream
 git checkout -b sync-upstream
 git merge upstream/main -m "Pull in changes from upstream"
-git push -u origin sync-upstream
-gh pr create --title "Sync with upstream" --body "Synchronize fork with upstream changes"
 ```
 
-Alternatively, use the GitHub UI to create a PR from the upstream branch.
+Update the versions in `macros.xml`: Take the tool version from `pyproject.toml`,
+and bump the galaxy version if necessary.
+Then, commit your changes and push them:
+
+```bash
+git add macros.xml
+git commit -m "update versions in macros.xml"
+git push -u origin sync-upstream
+gh pr create --title "Synchronize fork with upstream changes"
+```
+
+If the automated tests fail, you might need to adapt the `Dockerfile`,
+the `fileidentification-galaxy.xml`, or the test data.
+Once the automated tests succeed, merge your PR.
+This will automatically publish the newest Docker image to Docker Hub.
+
+Then, open a PR which updates <https://github.com/galaxyproject/tools-iuc/tree/main/tools/fileidentification>.
+In the simplest case, you can just copy over the `macros.xml`,
+but if you modified anything else, then update the other files, too.
+Once the PR in tools-iuc is merged, the Galaxy tool will be updated in Galaxy's tool shed.
 
 
 ## Resources

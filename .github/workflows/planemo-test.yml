@@ -23,8 +23,20 @@ jobs:
       - name: Install Python dependencies (uv will install python automatically, if no appropriate version is installed)
         run: uv sync --all-extras --dev
         shell: bash
+      - name: Extract version from macros.xml
+        id: version
+        run: |
+          TOOL_VERSION=$(grep '<token name="@TOOL_VERSION@">' macros.xml | sed -E 's/.*<token name="@TOOL_VERSION@">([^<]+)<.*/\1/')
+          GALAXY_VERSION=$(grep '<token name="@GALAXY_VERSION@">' macros.xml | sed -E 's/.*<token name="@GALAXY_VERSION@">([^<]+)<.*/\1/')
+          VERSION_TAG="${TOOL_VERSION}-galaxy${GALAXY_VERSION}"
+          echo "version_tag=${VERSION_TAG}" >> $GITHUB_OUTPUT
+          echo "Building version: ${VERSION_TAG}"
       - name: Build Docker image
-        run: docker buildx build -t daschswiss/fileidentification-galaxy:latest .
+        run: |
+          docker buildx build \
+            -t daschswiss/fileidentification-galaxy:latest \
+            -t daschswiss/fileidentification-galaxy:${{ steps.version.outputs.version_tag }} \
+            .
       - name: Run planemo e2e tests
         run: |
           BRANCH_NAME="${{ github.head_ref  || github.ref_name}}"
