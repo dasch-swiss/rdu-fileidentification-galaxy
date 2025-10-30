@@ -19,8 +19,8 @@ jobs:
       - name: Extract version from macros.xml
         id: version
         run: |
-          TOOL_VERSION=$(grep -oP '(?<=<token name="@TOOL_VERSION@">)[^<]+' macros.xml)
-          GALAXY_VERSION=$(grep -oP '(?<=<token name="@GALAXY_VERSION@">)[^<]+' macros.xml)
+          TOOL_VERSION=$(grep '<token name="@TOOL_VERSION@">' macros.xml | sed -E 's/.*<token name="@TOOL_VERSION@">([^<]+)<.*/\1/')
+          GALAXY_VERSION=$(grep '<token name="@GALAXY_VERSION@">' macros.xml | sed -E 's/.*<token name="@GALAXY_VERSION@">([^<]+)<.*/\1/')
           VERSION_TAG="${TOOL_VERSION}+galaxy${GALAXY_VERSION}"
           echo "version_tag=${VERSION_TAG}" >> $GITHUB_OUTPUT
           echo "Publishing version: ${VERSION_TAG}"
