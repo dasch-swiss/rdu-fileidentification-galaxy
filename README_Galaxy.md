@@ -51,7 +51,7 @@ But if you want your local planemo to be aware of your changes, make sure to reb
 ```bash
 TOOL_VERSION=xyz    # copy from macros.xml
 GALAXY_VERSION=xyz  # copy from macros.xml
-docker build -t daschswiss/fileidentification-galaxy:${TOOL_VERSION}+galaxy${GALAXY_VERSION} .
+docker build -t daschswiss/fileidentification-galaxy:${TOOL_VERSION}-galaxy${GALAXY_VERSION} .
 ```
 
 
