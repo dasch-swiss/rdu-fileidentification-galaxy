@@ -94,6 +94,9 @@ git checkout -b sync-upstream
 git merge upstream/main -m "Pull in changes from upstream"
 ```
 
+If anything has changed on <https://github.com/galaxyproject/tools-iuc/tree/main/tools/fileidentification>,
+copy over the changed files into this repo.
+
 Update the versions in `macros.xml`: Take the tool version from `pyproject.toml`,
 and bump the galaxy version if necessary.
 Then, commit your changes and push them:
