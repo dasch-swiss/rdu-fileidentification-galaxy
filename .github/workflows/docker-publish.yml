@@ -4,6 +4,12 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'fileidentification/**'
+      - 'identify.py'
+      - 'Dockerfile'
+      - 'pyproject.toml'
+      - 'uv.lock'
   workflow_dispatch:
 
 jobs:
@@ -20,10 +26,8 @@ jobs:
         id: version
         run: |
           TOOL_VERSION=$(grep '<token name="@TOOL_VERSION@">' macros.xml | sed -E 's/.*<token name="@TOOL_VERSION@">([^<]+)<.*/\1/')
-          VERSION_SUFFIX=$(grep '<token name="@VERSION_SUFFIX@">' macros.xml | sed -E 's/.*<token name="@VERSION_SUFFIX@">([^<]+)<.*/\1/')
-          VERSION_TAG="${TOOL_VERSION}-galaxy${VERSION_SUFFIX}"
-          echo "version_tag=${VERSION_TAG}" >> $GITHUB_OUTPUT
-          echo "Publishing version: ${VERSION_TAG}"
+          echo "tool_version=${TOOL_VERSION}" >> $GITHUB_OUTPUT
+          echo "Publishing version: ${TOOL_VERSION}"
       - name: Login to Dockerhub
         run: echo ${{ secrets.DOCKER_HUB_TOKEN }} | docker login -u ${{ secrets.DOCKER_USER }} --password-stdin
       - name: Build and push multi-arch image
@@ -31,6 +35,6 @@ jobs:
           docker buildx build \
             --platform linux/amd64,linux/arm64 \
             -t daschswiss/fileidentification-galaxy:latest \
-            -t daschswiss/fileidentification-galaxy:${{ steps.version.outputs.version_tag }} \
+            -t daschswiss/fileidentification-galaxy:${{ steps.version.outputs.tool_version }} \
             --push \
             .

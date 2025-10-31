@@ -1,0 +1,72 @@
+name: Validate Version Bump
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    paths:
+      - 'fileidentification/**'
+      - 'identify.py'
+      - 'Dockerfile'
+      - 'pyproject.toml'
+      - 'uv.lock'
+
+jobs:
+  check-version-bump:
+    name: Check Version Bump
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Extract version from macros.xml
+        id: pr_version
+        run: |
+          TOOL_VERSION=$(grep '<token name="@TOOL_VERSION@">' macros.xml | sed -E 's/.*<token name="@TOOL_VERSION@">([^<]+)<.*/\1/')
+          echo "tool_version=${TOOL_VERSION}" >> $GITHUB_OUTPUT
+          echo "PR version: ${TOOL_VERSION}"
+
+      - name: Extract version from main branch
+        id: main_version
+        run: |
+          git fetch origin main
+          MAIN_VERSION=$(git show origin/main:macros.xml | grep '<token name="@TOOL_VERSION@">' | sed -E 's/.*<token name="@TOOL_VERSION@">([^<]+)<.*/\1/')
+          echo "main_version=${MAIN_VERSION}" >> $GITHUB_OUTPUT
+          echo "Main version: ${MAIN_VERSION}"
+
+      - name: Check if version tag exists on Docker Hub
+        id: check_tag
+        run: |
+          TOKEN=$(curl -s "https://auth.docker.io/token?service=registry.docker.io&scope=repository:daschswiss/fileidentification-galaxy:pull" | jq -r .token)
+          TAG_EXISTS=$(curl -s -H "Authorization: Bearer $TOKEN" "https://registry.hub.docker.com/v2/daschswiss/fileidentification-galaxy/manifests/${{ steps.pr_version.outputs.tool_version }}" | jq -r 'if .errors then "false" else "true" end')
+          echo "tag_exists=${TAG_EXISTS}" >> $GITHUB_OUTPUT
+          echo "Tag ${{ steps.pr_version.outputs.tool_version }} exists on Docker Hub: ${TAG_EXISTS}"
+
+      - name: Validate version bump
+        run: |
+          PR_VERSION="${{ steps.pr_version.outputs.tool_version }}"
+          MAIN_VERSION="${{ steps.main_version.outputs.main_version }}"
+          TAG_EXISTS="${{ steps.check_tag.outputs.tag_exists }}"
+
+          echo "Comparing versions:"
+          echo "  Main branch version: ${MAIN_VERSION}"
+          echo "  PR branch version: ${PR_VERSION}"
+          echo "  Tag exists on Docker Hub: ${TAG_EXISTS}"
+
+          if [ "$PR_VERSION" == "$MAIN_VERSION" ]; then
+            echo "::error::Version has not been bumped in macros.xml"
+            echo "::error::Current version in main: ${MAIN_VERSION}"
+            echo "::error::Version in this PR: ${PR_VERSION}"
+            echo "::error::Please increment @TOOL_VERSION@ in macros.xml since code files have changed."
+            exit 1
+          fi
+
+          if [ "$TAG_EXISTS" == "true" ]; then
+            echo "::error::Version ${PR_VERSION} already exists on Docker Hub"
+            echo "::error::Please use a new version number in macros.xml"
+            exit 1
+          fi
+
+          echo "✓ Version bump validated: ${MAIN_VERSION} → ${PR_VERSION}"
+          echo "✓ Version ${PR_VERSION} is available on Docker Hub"
