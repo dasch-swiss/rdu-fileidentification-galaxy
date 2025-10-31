@@ -27,15 +27,13 @@ jobs:
         id: version
         run: |
           TOOL_VERSION=$(grep '<token name="@TOOL_VERSION@">' macros.xml | sed -E 's/.*<token name="@TOOL_VERSION@">([^<]+)<.*/\1/')
-          VERSION_SUFFIX=$(grep '<token name="@VERSION_SUFFIX@">' macros.xml | sed -E 's/.*<token name="@VERSION_SUFFIX@">([^<]+)<.*/\1/')
-          VERSION_TAG="${TOOL_VERSION}-galaxy${VERSION_SUFFIX}"
-          echo "version_tag=${VERSION_TAG}" >> $GITHUB_OUTPUT
-          echo "Building version: ${VERSION_TAG}"
+          echo "tool_version=${TOOL_VERSION}" >> $GITHUB_OUTPUT
+          echo "Building version: ${TOOL_VERSION}"
       - name: Build Docker image
         run: |
           docker buildx build \
             -t daschswiss/fileidentification-galaxy:latest \
-            -t daschswiss/fileidentification-galaxy:${{ steps.version.outputs.version_tag }} \
+            -t daschswiss/fileidentification-galaxy:${{ steps.version.outputs.tool_version }} \
             .
       - name: Run planemo e2e tests
         run: |
