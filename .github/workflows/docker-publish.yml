@@ -4,6 +4,12 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'fileidentification/**'
+      - 'identify.py'
+      - 'Dockerfile'
+      - 'pyproject.toml'
+      - 'uv.lock'
   workflow_dispatch:
 
 jobs:
