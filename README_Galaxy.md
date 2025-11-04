@@ -42,16 +42,12 @@ Keep in mind:
 
 ### Rebuilding the Docker Image (just for local testing)
 
-Every push to the main branch triggers a rebuild of the Docker image,
-and uploads it to [Docker Hub](https://hub.docker.com/r/daschswiss/fileidentification-galaxy).
-
 If you modify the Python code or the Dockerfile, and open a PR, the automated tests will rebuild the Docker image.
 But if you want your local planemo to be aware of your changes, make sure to rebuild the image first:
 
 ```bash
 TOOL_VERSION=xyz    # copy from macros.xml
-GALAXY_VERSION=xyz  # copy from macros.xml
-docker build -t daschswiss/fileidentification-galaxy:${TOOL_VERSION}-galaxy${GALAXY_VERSION} .
+docker build -t daschswiss/fileidentification-galaxy:${TOOL_VERSION} .
 ```
 
 
@@ -64,11 +60,11 @@ Steps to test if `.shed.yml` is correct:
 - Create an account on <https://testtoolshed.g2.bx.psu.edu/>
 - Run `planemo config_init`
 - In `~/.planemo.yml` > sheds > testtoolshed, fill in your credentials for <https://testtoolshed.g2.bx.psu.edu/>
+- Fill in your test account name in `.shed.yml` > owner
 - Check the `.shed.yml` with `planemo shed_lint --tools`.
 - Create the remote repository with `planemo shed_create --shed_target testtoolshed`.
-    - For this to work, you probably need to fill in your test account name in `.shed.yml` > owner.
 - DaSCH has an account on the prod toolshed <https://toolshed.g2.bx.psu.edu/>,
-  which is probably not used, because of `owner: iuc`.
+  which is not used, because of `owner: iuc`.
 
 
 ## How to update the Galaxy Tool
@@ -97,8 +93,16 @@ git merge upstream/main -m "Pull in changes from upstream"
 If anything has changed on <https://github.com/galaxyproject/tools-iuc/tree/main/tools/fileidentification>,
 copy over the changed files into this repo.
 
-Update the versions in `macros.xml`: Take the tool version from `pyproject.toml`,
-and bump the galaxy version if necessary.
+Update the versions in `macros.xml`:
+
+- If only the Galaxy wrapper stuff has changed: bump `@VERSION_SUFFIX@`
+- If the Python code, Python dependencies, or Dockerfile have changed:
+  bump `@TOOL_VERSION@`, according to the version from `pyproject.toml`.
+  This is enforced by a GitHub actions check,
+  because the images on Docker Hub are versioned according to `@TOOL_VERSION@`.
+  Galaxy will only be able to pull a new image from Docker Hub if a new image has been pushed,
+  which only happens if `@TOOL_VERSION@` is bumped.
+
 Then, commit your changes and push them:
 
 ```bash
@@ -108,10 +112,10 @@ git push -u origin sync-upstream
 gh pr create --title "Synchronize fork with upstream changes"
 ```
 
-If the automated tests fail, you might need to adapt the `Dockerfile`,
-the `fileidentification-galaxy.xml`, or the test data.
 Once the automated tests succeed, merge your PR.
-This will automatically publish the newest Docker image to Docker Hub.
+If the Python code, Python dependencies, or Dockerfile have changed,
+this will automatically publish the newest Docker image to
+[Docker Hub](https://hub.docker.com/r/daschswiss/fileidentification-galaxy).
 
 Then, open a PR which updates <https://github.com/galaxyproject/tools-iuc/tree/main/tools/fileidentification>.
 In the simplest case, you can just copy over the `macros.xml`,
