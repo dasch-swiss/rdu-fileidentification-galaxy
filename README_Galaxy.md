@@ -51,6 +51,22 @@ docker build -t daschswiss/fileidentification-galaxy:${TOOL_VERSION} .
 ```
 
 
+## Tool Shed
+
+Publishing to Galaxy's app store <https://toolshed.g2.bx.psu.edu/> is automatically done by tools-iuc,
+and configured by `.shed.yml`.
+Steps to test if `.shed.yml` is correct:
+
+- Create an account on <https://testtoolshed.g2.bx.psu.edu/>
+- Run `planemo config_init`
+- In `~/.planemo.yml` > sheds > testtoolshed, fill in your credentials for <https://testtoolshed.g2.bx.psu.edu/>
+- Fill in your test account name in `.shed.yml` > owner
+- Check the `.shed.yml` with `planemo shed_lint --tools`.
+- Create the remote repository with `planemo shed_create --shed_target testtoolshed`.
+- DaSCH has an account on the prod toolshed <https://toolshed.g2.bx.psu.edu/>,
+  which is not used, because of `owner: iuc`.
+
+
 ## How to update the Galaxy Tool
 
 Follow these steps to bring the latest changes from <https://github.com/dasch-swiss/fileidentification>
