@@ -174,7 +174,6 @@ class FileHandler:
             self._gen_policies(policies_path, blank=blank)
         # load the external passed policies with option -p or default location
         else:
-            print_msg(f"Loading policies from {policies_path}", self.mode.QUIET)
             self._load_policies(policies_path)
 
         # expand a passed policies with the filetypes found in root_folder that are not yet in the policies
@@ -214,7 +213,7 @@ class FileHandler:
         self.fp.LOGJSON = self.fp.TMP_DIR / f"{datetime.now(UTC).strftime('%y%m%d')}_report.json"
         self.fp.POLJSON.unlink(missing_ok=True)
         active = [s for s in self.stack if not (s.status.removed or s.dest)]
-        with Progress(SpinnerColumn(), TextColumn("[progress.description]{task.description}"), transient=True) as prog:
+        with Progress(SpinnerColumn(), TextColumn("[progress.description]{task.description}"), transient=True, disable=True) as prog:
             prog.add_task(description="Probing the files ...", total=None)
             with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
                 list(
