@@ -213,7 +213,9 @@ class FileHandler:
         self.fp.LOGJSON = self.fp.TMP_DIR / f"{datetime.now(UTC).strftime('%y%m%d')}_report.json"
         self.fp.POLJSON.unlink(missing_ok=True)
         active = [s for s in self.stack if not (s.status.removed or s.dest)]
-        with Progress(SpinnerColumn(), TextColumn("[progress.description]{task.description}"), transient=True, disable=True) as prog:
+        with Progress(
+            SpinnerColumn(), TextColumn("[progress.description]{task.description}"), transient=True, disable=True
+        ) as prog:
             prog.add_task(description="Probing the files ...", total=None)
             with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
                 list(
