@@ -1,6 +1,6 @@
 [project]
 name = "fileidentification"
-version = "2.5.0"
+version = "2.7.3"
 description = ""
 authors = []
 readme = "README.md"
@@ -9,7 +9,6 @@ dependencies = [
     "typer>=0.10.0",
     "pydantic>=2.11.7",
     "pygfried>=0.12.0",
-    "toml>=0.10.2",
 ]
 
 [project.optional-dependencies]
@@ -33,10 +32,6 @@ dev = [
 [tool.mypy]
 strict = true
 enable_error_code = ["possibly-undefined"]
-
-[[tool.mypy.overrides]]
-module = "toml.*"
-ignore_missing_imports = true
 
 [tool.ruff]
 line-length = 120
@@ -69,6 +64,7 @@ ignore = [
     "FBT001",   # Boolean-typed positional argument in function definition
     "FBT002",   # `flake8-boolean-trap` - Boolean default positional argument in function definition
     "FBT003",   # Boolean positional value in function call
+    "FURB171", # single item membership test
     "FIX",      # `flake8-fixme`
     "ISC001",   # handled by ruff format
     "PERF203",  # `try-except-in-loop` - obsolete in python >= 3.11
@@ -84,6 +80,7 @@ ignore = [
     "RUF012",   # Mutable class attributes should be annotated with typing.ClassVar
     "S101",     # Use of assert detected
     "S602",     # `subprocess` call with `shell=True` identified
+    "S603",     # `subprocess` call: check for execution of untrusted input
     "TD002",    # missing-todo-author
     "TD003",    # missing-todo-link
     "TID252",   # banned-module-level-imports

@@ -4,12 +4,12 @@ A python CLI to identify file formats and bulk convert files.
 It is designed for digital preservation workflows and is basically a python wrapper around several programs.
 It uses [pygfried](https://pypi.org/project/pygfried/)
 (a CPython extension for [siegfried](https://www.itforarchivists.com/siegfried)),
-ffmpeg, imagemagick (optionally inkscape) and LibreOffice, so it's recommended to have those installed.
+ffmpeg, imagemagick (optionally inkscape) and LibreOffice.
 If you are not using fileidentification a lot and don't want to install these programs,
 you can run the script in a docker container.
-There is a dockerfile ready, the current docker image is still heavy though (1.1 G).
+There is a dockerfile ready, the current docker image is still heavy though (1.3 G).
 
-Most probable use case might be when you need to test and possibly convert a huge amount of files
+Most probable use case might be when you need to test and possibly convert a huge number of files
 and you don't know in advance what file types you are dealing with.
 It features:
 
@@ -17,7 +17,6 @@ It features:
 - file probing with ffmpeg and imagemagick
 - file conversion with ffmpeg, imagemagick and LibreOffice using a JSON file as a protocol
 - detailed logging
-
 
 ## Installation
 
@@ -34,42 +33,25 @@ ln -s `pwd`/fidr.sh $HOME/.local/bin/fidr
 
 #### Quickstart for Docker-based Installation
 
-- **Generate policies for your files:**
+1. **Generate policies for your files:**
 
     `fidr path/to/directory`
 
-  - **Review generated policies:**
+    This creates a folder `__fileidentification` inside the target directory with a `_policies.json` file. 
+    Optionally review and edit it to customize conversion rules.
 
-      Edit `path/to/directory_policies.json` to customize conversion rules.
-      Optionally, test the outcome of the edited policies:
-
-      `fidr path/to/directory -t`
-
-- **Test the files on errors and apply the policies:**
+2. **Test the files on errors and apply the policies:**
 
     `fidr path/to/directory -iar`
 
-- **Logfile**: see `path/to/directory_log.json`
-
-    If you wish a simpler CSV output, run `fidr path/to/directory --csv` to get a CSV.
-
-A more complex example: The following command will:
-
-- load an external policies JSON
-- expand it only with file types defined in the default policies (strict mode)
-- probe the files in verbose mode
-- apply the policies (in strict mode, i.e. remove the files whose file type is not listed in the generated policies)
-- remove temporary files and get a simpler CSV output:
-
-`fidr path/to/directory -esivar -p path/to/external_policies.json --csv`
-
-The first argument has to be the root folder of your files to process, otherwise combine flags / arguments as you wish.
-See **Options** below for more available flags.
-
+See **Options** and **Examples** below for more available flags. or just use `fidr --help`
 
 ### Manual Installation on Your System
 
-Install ffmpeg, imagemagick and LibreOffice, if not already installed:
+Install ffmpeg (used to check/convert video and audio files),
+imagemagick (used to check/convert images),
+LibreOffice (used to convert Office documents and PDFs),
+and ghostscript (used by imagemagick when dealing with PDFs):
 
 #### MacOS (using Homebrew)
 
@@ -110,66 +92,81 @@ This creates a venv and installs all necessary python dependencies:
 uv run identify.py --help
 ```
 
+## Main Tasks Explained
 
-## Single Execution Steps Explained
+`uv run identify.py` is equivalent to `fidr` -> the entry script depending on your installation.
 
 ### Detect File Formats - Generate Conversion Policies
 
 `uv run identify.py path/to/directory`
 
-Generate two JSON files:
+This generates a folder `__fileidentification` inside the target directory with two JSON files:
 
-**path/to/directory_log.json** : The technical metadata of all the files in the folder
+**_log.json** : The technical metadata of all the files in the folder
 
-**path/to/directory_policies.json** : A file conversion protocol for each file format
+**_policies.json** : A file conversion protocol for each file format
 that was encountered in the folder according to the default policies. Edit it to customize conversion rules.
 
-### Inspect The Files (`-i` | `--inspect`)
+#### Overview table
+
+In the console output there is a table with an overview of the encountered file formats.
+The rows are colored according to this color code:
+
+- White: Files of that format are processed according to the given policy
+- Yellow: Files of that format are skipped (either blank policy or policy is missing)
+- Red: Files of that format are being removed (when run with flag `-s`, `--strict`)
+
+Possible values of the "Policy" column:
+
+- `ffmpeg|magick|soffice`: Files of this format are going to be converted with the indicated program
+- blank: Generated a blank policy (template)
+- missing: No policy for this file type
+
+### Assert File Integrity
+
+(`-i` | `--assert-file-integrity`)
 
 `uv run identify.py path/to/directory -i`
 
-Probes the files on errors and move corrupted files to the folder in `path/to/directory_TMP/_REMOVED`.
+Probe the files on errors and move corrupted files to the folder in `__fileidentification/_REMOVED`.
+Rename files with extension mismatch.
 
-You can also add the flag `-v` (`--verbose`) for more detailed inspection (see **Options** below).
+Optionally add the flag `-v` (`--verbose`) for more detailed inspection (see **Options** below).
 
 NOTE: Currently only audio/video and image files are inspected.
 
-### Convert The Files According to the Policies (`-a` | `--apply`)
+### Convert The Files According to the Policies
+
+(`-a` | `--apply`)
 
 `uv run identify.py path/to/directory -a`
 
-Apply the policies defined in `path/to/directory_policies.json` and convert files into their target file format.
-The converted files are temporarily stored in `path/to/directory_TMP` (default) with the log output
-of the program used as log.txt next to it.
+Apply the policies defined in `__fileidentification/_policies.json` (or in the policies passed with `-p`) and convert
+files into their target file format.
+The converted files are temporarily stored in `__fileidentification`
 
-### Clean Up Temporary Files (`-r` | `--remove-tmp`)
+### Clean Up Temporary Files
+
+(`-r` | `--remove-tmp`)
 
 `uv run identify.py path/to/directory -r`
 
-Delete all temporary files and folders and move the converted files next to their parents.
-
-### Combining Steps - Custom Policies and Working Directory
-
-If you don't need these intermediary steps, you can run the desired steps at once by combining their flags.
-Here is an example how to do verbose testing, applying a custom policy
-(see **Options** below for more information about the flags):
-
-`uv run identify.py path/to/directory -ariv -p path/to/custom_policies.json`
+Delete all temporary files and folders and move the converted files next to their original.
 
 ### Log
 
-The **path/to/directory_log.json** takes track of all modifications in the target folder.  
+The **_log.json** takes track of all modifications in the target folder.  
 Since with each execution of the script it checks whether such a log exists and read/appends to that file.  
 Iterations of file conversions such as A -> B, B -> C, ... are logged in the same file.
 
 If you wish a simpler csv output, you can add the flag `--csv` anytime when you run the script,
-which converts the `log.json` of the actual status of the directory to a csv.
-
+which maps the `_log.json` to a csv.
 
 ## Advanced Usage
 
-You can also create your own policies file, and with that, customise the file conversion output.
-Simply edit the generated default file `path/to/directory_policies.json` before applying.
+You can also create your own policies, and with that, customise the file conversion output.
+Simply edit the generated default file `__fileidentification/_policies.json` before applying or pass a customised
+policies files with the parameter `-p`.
 If you want to start from scratch, run `uv run indentify.py path/to/directory -b` to create a
 blank policies template with all the file formats encountered in the folder.
 
@@ -216,7 +213,7 @@ A policy for Audio/Video Interleaved Format (avi) that need to be transcoded to 
 }
 ```
 
-A policy for Portable Network Graphics that is accepted as it is, but gets tested:
+A policy for Portable Network Graphics that is accepted as it is:
 
 ```json
 {
@@ -235,28 +232,15 @@ You can test the outcome of the conversion policies with
 `uv run identify.py path/to/directory -t`
 
 The script takes the smallest file for each conversion policy and converts it.
-The converted files are located in _TMP/_TEST.
 
 If you just want to test a specific policy, append `f` and the puid:
 
 `uv run identify.py path/to/directory -tf fmt/XXX`
 
-If the policies file is not located at path/to/directory_policies.json, pass the path to it with the `-p` flag.
-
-
-## Modifying Default Settings
-
-In the `appconfig.toml` file you can customise some default values: e.g. the path to the default policies file or the
-location of the tmp dir.
-
-Other default params such as PDF/A export settings for LibreOffice or other strings are in 
-`fileidentification/definitions/constants.py`.
-
-
 ## Options
 
-`-i` | `--inspect`  
-Probe the files on errors
+`-i` | `--assert-file-integrity`  
+Remove corrupt files, and try to fix minor errors
 
 `-v` | `--verbose`  
 Catch more warnings on video and image files during the tests.
@@ -266,21 +250,28 @@ This can take a significantly longer time based on what files you have.
 Apply the policies
 
 `-r` | `--remove-tmp`  
-Remove all temporary items and add the converted files next to their parents.
+Remove all temporary items and add the converted files next to their original.
 
 `-x` | `--remove-original`  
 This overwrites the `remove_original` value in the policies and sets it to true when removing the tmp files.
-The original files are moved to the TMP/_REMOVED folder.
+The original files are moved to the `__fileidentification/_REMOVED` folder.
 When used in generating policies, it sets `remove_original` in the policies to true (default false).
 
+`--tmp-dir`  
+Use a custom tmp directory instead of the default `__fileidentification`
+
 `-p` | `--policies-path`  
-Load a custom policies JSON file instead of the default policies
+Load a custom policies JSON file instead of generating one out of the default policies.
 
 `-e` | `--extend-policies`  
-Append filetypes found in the directory to the given policies if they are missing in it.
+Use with `-p`:
+
+Append filetypes found in the directory to the custom policies if they are missing in it and generate a
+new policies json.
 
 `-s` | `--strict`  
-Move the files that are not listed in policies.json to the folder _REMOVED (instead of emitting a warning).
+Move the files whose format is not listed in the policies file to the folder _REMOVED
+(instead of emitting a warning).
 When used in generating policies, do not add blank policies for formats that are not mentioned in DEFAULTPOLICIES.
 
 `-b` | `--blank`  
@@ -289,6 +280,9 @@ Create a blank policies based on the file types encountered in the given directo
 `-q` | `--quiet`  
 Just print errors and warnings
 
+`--inspect`  
+Just inspect the target folder without any modification
+
 `--csv`  
 Get output as CSV, in addition to the log.json
 
@@ -296,12 +290,38 @@ Get output as CSV, in addition to the log.json
 Re-convert the files that failed during file conversion
 
 
-## Updating Signatures
+### Examples
+
+Use case: you have defined a set of rules in an external policies file and want to remove files of any format that
+is not listed in the external policies.  
+To get an overview: `fidr path/to/directory -s -p path/to/external_policies.json`  
+To apply it directly:
+
+`fidr path/to/directory -asr -p path/to/external_policies.json`
+
+- load an external policies JSON
+- apply the policies (in strict mode, i.e. remove the files whose file type is not listed in the policies)
+- remove temporary files  
+
+Use case: Your files are on an external storage drive and you might have limited diskspace left
+and want to only keep the converted files.
+
+`fidr path/to/directory --tmp-dir path/to/tmp_dir -ivarx`
+
+- use a custom tmp_dir to write files to (instead of the default `path/to/directory/__fileidentification`)
+- probe the files in verbose mode and apply the policies
+- remove temporary files and the original of the converted files
+
+## Updating the PUIDs
+
+Update the file format names and extensions of the PUIDs according to <https://www.nationalarchives.gov.uk/>.
 
 ```bash
 uv sync --extra update_fmt && uv run update.py
 ```
 
+creates an updated version of `fileidentification/definitions/fmt2ext.json`.
+If you use the Docker-based version, don't forget to rebuild the Docker image after updating the PUIDs.
 
 ## Useful Links
 
@@ -317,11 +337,3 @@ List of File Signatures on
 Preservation recommendations
 [kost](https://kost-ceco.ch/cms/de.html)
 [bundesarchiv](https://www.bar.admin.ch/dam/bar/de/dokumente/konzepte_und_weisungen/archivtaugliche_dateiformate.1.pdf.download.pdf/archivtaugliche_dateiformate.pdf)
-
-**NOTE**:
-
-If you want to convert to PDF/A, you need LibreOffice version 7.4+.
-
-When you convert SVG, you might run into errors, as the default library of ImageMagick is not that good.
-The easiest workaround is installing Inkscape ( `brew install --cask inkscape` ), and then reinstalling ImageMagick,
-so that it uses Inkscape as default for converting SVG ( `brew remove imagemagick; brew install imagemagick`).
