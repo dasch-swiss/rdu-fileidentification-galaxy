@@ -1,12 +1,18 @@
 import math
+from pathlib import Path
 
+from rich import box
+from rich.console import Console
+from rich.style import Style
+from rich.table import Table
 from typer import colors, secho
 
-from fileidentification.definitions.constants import FMT2EXT, FDMsg
 from fileidentification.definitions.models import BasicAnalytics, LogMsg, LogTables, Mode, Policies
+from fileidentification.definitions.settings import FMT2EXT, FDMsg
 
 
 def print_siegfried_errors(ba: BasicAnalytics) -> None:
+    """Print files for which siegfried reported a read error during identification."""
     if ba.siegfried_errors:
         secho("got the following errors from siegfried", bold=True)
         for sfinfo in ba.siegfried_errors:
@@ -14,89 +20,104 @@ def print_siegfried_errors(ba: BasicAnalytics) -> None:
 
 
 def print_fmts(puids: list[str], ba: BasicAnalytics, policies: Policies, mode: Mode) -> None:
+    """
+    Print a summary table of all encountered file formats with their PUID, name, file count,
+    combined size, and policy status.
+    Rows are white (policy set), yellow (blank/missing), or red (missing in strict mode).
+    """
     if mode.QUIET:
         return
-    secho("\n----------- file formats -----------\n", bold=True)
-    secho(
-        f"{'no. of files': <13} | {'combined size': <14} | {'fmt type': <10} | {'policy': <10} | {'convert': <10} | {'format name'}",
-        bold=True,
-    )
+    table = Table(title="", box=box.SIMPLE)
+    table.add_column("PUID")
+    table.add_column("Format Name")
+    table.add_column("File Count")
+    table.add_column("Combined Size")
+    table.add_column("Policy")
+
     for puid in puids:
         bytes_size: int = 0
         for sfinfo in ba.puid_unique[puid]:
             bytes_size += sfinfo.filesize
-        ba.total_size[puid] = bytes_size
         size = _format_bite_size(bytes_size)
-        nbr, fmtname = len(ba.puid_unique[puid]), f"{FMT2EXT[puid]['name']}"
+        po = ""
+        style = Style(color=colors.WHITE)
         if puid not in policies:
-            pn = "missing"
-            rm = "remove" if mode.STRICT else ""
-            secho(f"{nbr: <13} | {size: <14} | {puid: <10} | {pn: <10} | {rm: <10} | {fmtname}", fg=colors.RED)
+            po = "missing"
+            style = Style(color=colors.YELLOW)
+            if mode.STRICT:
+                style = Style(color=colors.RED)
         if puid in policies and not policies[puid].accepted:
-            ubin = policies[puid].bin
-            pn = ""
-            secho(f"{nbr: <13} | {size: <14} | {puid: <10} | {pn: <10} | {ubin: <10} | {fmtname}", fg=colors.YELLOW)
-        if puid in policies and policies[puid].accepted:
-            pn = ""
-            if ba.blank and puid in ba.blank:
-                pn = "blank"
-            secho(f"{nbr: <13} | {size: <14} | {puid: <10} | {pn: <10} | {'': <10} | {fmtname}")
+            po = policies[puid].bin
+        if ba.blank and puid in ba.blank:
+            po = "blank"
+            style = Style(color=colors.YELLOW)
+        table.add_row(puid, f"{FMT2EXT[puid]['name']}", f"{len(ba.puid_unique[puid])}", size, po, style=style)
+    console = Console()
+    console.print(table)
 
 
 def print_diagnostic(log_tables: LogTables, mode: Mode) -> None:
+    """
+    Print corruption errors always, and (in verbose mode) warnings and extension mismatches.
+    Each entry shows file size, filename, and the associated log messages.
+    """
     # lists all corrupt files with the respective errors thrown
     if log_tables.diagnostics:
         if FDMsg.ERROR.name in log_tables.diagnostics:
-            secho("\n----------- errors -----------", bold=True)
+            secho("\n----------- Errors -----------", bold=True)
             for sfinfo in log_tables.diagnostics[FDMsg.ERROR.name]:
-                secho(f"\n{_format_bite_size(sfinfo.filesize): >10}    {sfinfo.filename}")
-                _print_logs(sfinfo.processing_logs)
+                secho(f"\n{_format_bite_size(sfinfo.filesize): >10}    {sfinfo.filename}", bold=True)
+                _print_logs(sfinfo.warnings)
         if mode.VERBOSE and not mode.QUIET:
             if FDMsg.WARNING.name in log_tables.diagnostics:
-                secho("\n----------- warnings -----------", bold=True)
+                secho("\n----------- Warnings -----------", bold=True)
                 for sfinfo in log_tables.diagnostics[FDMsg.WARNING.name]:
-                    secho(f"\n{_format_bite_size(sfinfo.filesize): >10}    {sfinfo.filename}")
-                    _print_logs(sfinfo.processing_logs)
+                    secho(f"\n{_format_bite_size(sfinfo.filesize): >10}    {sfinfo.filename}", bold=True)
+                    _print_logs(sfinfo.warnings)
             if FDMsg.EXTMISMATCH.name in log_tables.diagnostics:
-                secho("\n----------- extension missmatch -----------", bold=True)
+                secho("\n----------- Extension mismatch -----------", bold=True)
                 for sfinfo in log_tables.diagnostics[FDMsg.EXTMISMATCH.name]:
-                    secho(f"\n{_format_bite_size(sfinfo.filesize): >10}    {sfinfo.filename}")
+                    secho(f"\n{_format_bite_size(sfinfo.filesize): >10}    {sfinfo.filename}", bold=True)
                     _print_logs(sfinfo.processing_logs)
 
 
-def print_duplicates(ba: BasicAnalytics, mode: Mode) -> None:
+def print_duplicates(duplicates: dict[str, list[Path]], mode: Mode) -> None:
+    """Print files that share the same MD5 checksum, grouped by hash."""
     if mode.QUIET:
         return
-    # pop uniques files
-    [ba.filehashes.pop(k) for k in ba.filehashes.copy() if len(ba.filehashes[k]) == 1]
-    if ba.filehashes:
-        secho("\n----------- duplicates -----------", bold=True)
-        for k in ba.filehashes:
-            secho(f"\nmd5: {k} - files: ", bold=True)
-            for path in ba.filehashes[k]:
-                secho(f"{path}")
+    if duplicates:
+        secho("\n----------- Duplicates -----------", bold=True)
+        secho("\nBased on their MD5 checksum, the following files are duplicates:")
+        for k in duplicates:  # noqa: PLC0206
+            secho(f"\nMD5 {k}: ", bold=True)
+            for path in duplicates[k]:
+                secho(f"- {path}")
         secho("\n")
 
 
 def print_processing_errors(log_tables: LogTables) -> None:
-    if log_tables.errors:
-        secho("\n----------- processing errors -----------", bold=True)
-        for err in log_tables.errors:
-            secho(f"\n{_format_bite_size(err[1].filesize): >10}    {err[1].filename}")
+    """Print files that encountered an error during conversion or filesystem operations."""
+    if log_tables.processing_errors:
+        secho("\n----------- Processing errors -----------", bold=True)
+        for err in log_tables.processing_errors:
+            secho(f"\n{_format_bite_size(err[1].filesize): >10}    {err[1].filename}", bold=True)
             _print_logs([err[0]])
 
 
 def _print_logs(logs: list[LogMsg]) -> None:
+    """Print a list of LogMsg entries as single-line timestamped entries."""
     for log in logs:
         secho(f"{log.name}:    {log.msg.replace('\n', ' ')}")
 
 
 def print_msg(msg: str, quiet: bool) -> None:
+    """Print msg unless quiet mode is active."""
     if not quiet:
         secho(msg)
 
 
 def _format_bite_size(bytes_size: int) -> str:
+    """Convert a byte count to a human-readable MB / GB / TB string."""
     tmp = bytes_size / (1024**2)
     if math.ceil(tmp) > 1000:
         tmp = tmp / 1024
