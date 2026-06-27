@@ -112,7 +112,15 @@ git push -u origin sync-upstream
 gh pr create --title "Synchronize fork with upstream changes"
 ```
 
-Once the automated tests succeed, merge your PR.
+Once the automated tests succeed, merge your PR
+using GitHub's "Create a merge commit" option - do NOT squash or rebase.
+Squashing the sync PR collapses upstream's commits into a single commit,
+which freezes the merge-base at the previous sync point.
+The fork then shows up as "behind" upstream on GitHub,
+and every future `git merge upstream/main` re-surfaces already-resolved conflicts.
+A real merge commit keeps upstream's commits as ancestors, so the fork stays "0 behind".
+(Normal feature PRs in this fork can still be squash-merged; only the sync PR needs a merge commit.)
+
 If the Python code, Python dependencies, or Dockerfile have changed,
 this will automatically publish the newest Docker image to
 [Docker Hub](https://hub.docker.com/r/daschswiss/fileidentification-galaxy).
