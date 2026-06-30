@@ -1,6 +1,4 @@
 categories:  # see https://toolshed.g2.bx.psu.edu/repositories_by_category 
-- Data Source
-- Imaging
 - Digital Humanities
 description: Tool to check multimedia files if they are corrupt or duplicated
 long_description: |
