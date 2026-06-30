@@ -58,27 +58,26 @@ def print_fmts(puids: list[str], ba: BasicAnalytics, policies: Policies, mode: M
 
 def print_diagnostic(log_tables: LogTables, mode: Mode) -> None:
     """
-    Print corruption errors always, and (in verbose mode) warnings and extension mismatches.
+    Print corruption errors and extension mismatches always, and (in verbose mode) warnings.
     Each entry shows file size, filename, and the associated log messages.
     """
     # lists all corrupt files with the respective errors thrown
     if log_tables.diagnostics:
         if FDMsg.ERROR.name in log_tables.diagnostics:
             secho("\n----------- Errors -----------", bold=True)
-            for sfinfo in log_tables.diagnostics[FDMsg.ERROR.name]:
+            for sfinfo in sorted(log_tables.diagnostics[FDMsg.ERROR.name], key=lambda s: s.filename):
                 secho(f"\n{_format_bite_size(sfinfo.filesize): >10}    {sfinfo.filename}", bold=True)
                 _print_logs(sfinfo.warnings)
-        if mode.VERBOSE and not mode.QUIET:
-            if FDMsg.WARNING.name in log_tables.diagnostics:
-                secho("\n----------- Warnings -----------", bold=True)
-                for sfinfo in log_tables.diagnostics[FDMsg.WARNING.name]:
-                    secho(f"\n{_format_bite_size(sfinfo.filesize): >10}    {sfinfo.filename}", bold=True)
-                    _print_logs(sfinfo.warnings)
-            if FDMsg.EXTMISMATCH.name in log_tables.diagnostics:
-                secho("\n----------- Extension mismatch -----------", bold=True)
-                for sfinfo in log_tables.diagnostics[FDMsg.EXTMISMATCH.name]:
-                    secho(f"\n{_format_bite_size(sfinfo.filesize): >10}    {sfinfo.filename}", bold=True)
-                    _print_logs(sfinfo.processing_logs)
+        if FDMsg.EXTMISMATCH.name in log_tables.diagnostics:
+            secho("\n----------- Extension mismatch -----------", bold=True)
+            for sfinfo in sorted(log_tables.diagnostics[FDMsg.EXTMISMATCH.name], key=lambda s: s.filename):
+                secho(f"\n{_format_bite_size(sfinfo.filesize): >10}    {sfinfo.filename}", bold=True)
+                _print_logs(sfinfo.processing_logs)
+        if mode.VERBOSE and not mode.QUIET and FDMsg.WARNING.name in log_tables.diagnostics:
+            secho("\n----------- Warnings -----------", bold=True)
+            for sfinfo in sorted(log_tables.diagnostics[FDMsg.WARNING.name], key=lambda s: s.filename):
+                secho(f"\n{_format_bite_size(sfinfo.filesize): >10}    {sfinfo.filename}", bold=True)
+                _print_logs(sfinfo.warnings)
 
 
 def print_duplicates(duplicates: dict[str, list[Path]], mode: Mode) -> None:
@@ -99,7 +98,7 @@ def print_processing_errors(log_tables: LogTables) -> None:
     """Print files that encountered an error during conversion or filesystem operations."""
     if log_tables.processing_errors:
         secho("\n----------- Processing errors -----------", bold=True)
-        for err in log_tables.processing_errors:
+        for err in sorted(log_tables.processing_errors, key=lambda e: e[1].filename):
             secho(f"\n{_format_bite_size(err[1].filesize): >10}    {err[1].filename}", bold=True)
             _print_logs([err[0]])
 
